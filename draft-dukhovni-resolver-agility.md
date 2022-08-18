@@ -1,48 +1,74 @@
----
-title: "Validating DNSSEC resolver algorithm agility clarifications"
-abbrev: title
-docname: draft-dukhovni-resolver-agility-00
-category: std
-ipr: trust200902
-updates: 4035
-stand_alone: yes
-pi: [toc, sortrefs, symrefs, docmapping]
-consensus: true
+%%%
+Title = "Validating DNSSEC resolver algorithm agility clarifications"
+abbrev = "resolver-agility"
+docname = "@DOCNAME@"
+category = "std"
+ipr = "trust200902"
+updates = [4035]
+stand_alone = "yes"
+area = "Internet"
+pi = ["toc", "sortrefs", "symrefs", "docmapping"]
+consensus = true
+workgroup = "DNSOP Working Group"
+date = @TODAY@
 
-author:
-  -
-    ins: V. Dukhovni
-    name: Viktor Dukhovni
-    org: Google LLC
-    email: ietf-dane@dukhovni.org
+[seriesInfo]
+name = "Internet-Draft"
+value = "@DOCNAME@"
+stream = "IETF"
+status = "standard"
 
-normative:
-  RFC4034:
-  RFC4035:
-  RFC5155:
+[[author]]
+initials = "V."
+surname = "Dukhovni"
+fullname = "Viktor Dukhovni"
+organization = "Google LLC"
+[author.address]
+ email = "ietf-dane@dukhovni.org"
+
+[[author]]
+initials = "P."
+surname = "Thomassen"
+fullname = "Peter Thomassen"
+organization = "deSEC, Secure Systems Engineering"
+[author.address]
+ email = "peter@desec.io"
+
+[[author]]
+initials = "N."
+surname = "Wisiol"
+fullname = "Nils Wisiol"
+organization = "deSEC, Technische Universität Berlin"
+[author.address]
+ email = "nils@desec.io"
+%%%
 
 
---- abstract
+.# Abstract
 
-DNSSEC {{RFC4035}} employs a number of zone signature algorithms.  When a zone
+DNSSEC ([@!RFC4035]) employs a number of zone signature algorithms.  When a zone
 is signed with an algorithm that is also supported by a given validating
 resolver, it MUST NOT be possible to hide this fact from the resolver and
 thereby convince it to accept unvalidated answers, i.e. downgrade the zone from
-"Secure" to "Insecure" (see section 4.3 of {{RFC4035}}).  How to avoid such
-downgrades in resolvers is not adequately covered in {{RFC4035}}, this document
+"Secure" to "Insecure" (see section 4.3 of [@!RFC4035]).  How to avoid such
+downgrades in resolvers is not adequately covered in [@!RFC4035], this document
 attempts to fill the gap.
 
---- middle
+[ Ed note: This document is being collaborated on at
+<https://github.com/desec-io/draft-dukhovni-resolver-agility/>.
+The authors gratefully accept pull requests. ]
+
+{mainmatter}
 
 # Introduction
 
-DNSSEC {{RFC4035}} employs a number of zone signing algorithms, some already
+DNSSEC ([@!RFC4034],[@!RFC4035],[@!RFC5155]) employs a number of zone signing algorithms, some already
 obsolete, some mainstream and mandatory to implement, and others recommended to
 implement, but not yet widely deployed.  Validating resolvers generally support
 a range of algorithms beyond the mandatory to implement set.  Some that are
 deprecated, but still in use by a non-trivial number of deployed zones, others
 that are expected to be in wider use in the future.  The status of the various
-algorithms is noted in Section 3 of {{RFC8624}}, which is expected be updated
+algorithms is noted in Section 3 of [@!RFC4035], which is expected be updated
 in subsequent documents from time to time.
 
 Some zones may be signed with multiple algorithms.  Such multi-signed zones are
@@ -61,7 +87,7 @@ resistance to downgrades of zones signed via a supported algorithm to
 One or more algorithms with which a zone is signed may not be supported by a
 given validating resolver, and when none are supported, absent local policy
 requiring the zone to be signed, the resolver MUST consider the zone "Insecure"
-(see Section 4.3 of {{RFC4035}}).  When, as explained in {{Algorithm agility}}
+(see Section 4.3 of [@!RFC4035]).  When, as explained in (#algorithm-agility)
 below, the zone's signature algorithms overlap with those supported by the
 resolver, the zone MUST NOT be treated "Insecure" (even when no RRSIGs for
 supported algorithms are included in a given reply).
@@ -69,12 +95,15 @@ supported algorithms are included in a given reply).
 
 ## Requirements Notation
 
-   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY",
-   and "OPTIONAL" in this document are to be interpreted as described
-   in BCP 14 {{RFC2119}} {{RFC8174}} when, and only when, they appear
-   in all capitals, as shown here.
+The key words "**MUST**", "**MUST NOT**", "**REQUIRED**",
+"**SHALL**", "**SHALL NOT**", "**SHOULD**", "**SHOULD NOT**",
+"**RECOMMENDED**", "**NOT RECOMMENDED**", "**MAY**", and
+"**OPTIONAL**" in this document are to be interpreted as described in
+BCP 14 [@!RFC2119] [@!RFC8174] when, and only when, they appear in all
+capitals, as shown here.
 
+
+{#algorithm-agility}
 # Algorithm agility
 
 [[ Explain algorithm agility for DS records and that if a supported combination
@@ -84,8 +113,8 @@ supported algorithms are included in a given reply).
    entire zone is "Bogus" for lack of a "Secure Entry Point" (SEP).
 
    The zone's candidate signing keys are then those zone apex DNSKEYs with
-   protocol 3 (see section 2.1.2 of {{RFC4035}})) and the "Zone Key" flag bit
-   set (see section 2.1.1 of {{RFC4035}}).  The zone signer MUST ensure that
+   protocol 3 (see section 2.1.2 of [@!RFC4035])) and the "Zone Key" flag bit
+   set (see section 2.1.1 of [@!RFC4035]).  The zone signer MUST ensure that
    each record in the zone has a signature made with each algorithm associated
    with some candidate zone signing key.
 
@@ -112,13 +141,19 @@ supported algorithms are included in a given reply).
 This entire document discusses security considerations relating to avoiding
 DNSSEC downgrades to "Insecure".
 
-# Operational Considerations
-
 # IANA Considerations
 
-None.
+None
 
---- back
+# Acknowledgements
 
-# Acknowledgments
-
+
+{backmatter}
+
+
+# Change History (to be removed before publication)
+
+* draft-dukhovni-resolver-agility-00
+
+> Initial public draft.
+
