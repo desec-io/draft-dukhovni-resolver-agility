@@ -1,0 +1,34 @@
+name: Publish GitHub Page
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main branch
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  publish-gh-page:
+    concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install tools
+        run: |
+          wget https://github.com/mmarkdown/mmark/releases/download/v2.2.25/mmark_2.2.25_linux_amd64.tgz
+          tar xf mmark_2.2.25_linux_amd64.tgz
+          mv mmark /usr/local/bin/mmark
+          pip3 install xml2rfc
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Make
+        run: |
+          make
+          cd build
+          ln -s $(ls -1 *.html | head -n 1) index.html
+
+      - name: Publish
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+
