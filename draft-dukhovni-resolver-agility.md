@@ -108,7 +108,7 @@ capitals, as shown here.
 # Algorithm agility
 
 [[ Explain algorithm agility for DS records and that if a supported combination
-   if signature and hash algorithms is found there, the resolver MUST check that
+   of signature and hash algorithms is found there, the resolver MUST check that
    the zone apex DNSKEY RRset has at least one valid signature made with a key
    (SEP) matching a supported DS record (or any local trust anchor), otherwise the
    entire zone is "Bogus" for lack of a "Secure Entry Point" (SEP).
