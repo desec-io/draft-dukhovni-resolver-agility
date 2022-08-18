@@ -3,11 +3,11 @@
 <rfc version="3" ipr="trust200902" docName="draft-dukhovni-resolver-agility-00" submissionType="IETF" category="std" xml:lang="en" xmlns:xi="http://www.w3.org/2001/XInclude" updates="4035" indexInclude="true" consensus="true">
 
 <front>
-<title abbrev="resolver-agility">Validating DNSSEC resolver algorithm agility clarifications</title><seriesInfo value="draft-dukhovni-resolver-agility-00" stream="IETF" status="standard" name="Internet-Draft"></seriesInfo>
+<title abbrev="resolver-agility">Clarifications on Signature Algorithm Presence in DNSSEC Zones and Answers</title><seriesInfo value="draft-dukhovni-resolver-agility-00" stream="IETF" status="standard" name="Internet-Draft"></seriesInfo>
 <author initials="V." surname="Dukhovni" fullname="Viktor Dukhovni"><organization>Google LLC</organization><address><postal><street></street>
 </postal><email>ietf-dane@dukhovni.org</email>
-</address></author><author initials="P." surname="Thomassen" fullname="Peter Thomassen"><organization>deSEC, Secure Systems Engineering</organization><address><postal><street></street>
-</postal><email>peter@desec.io</email>
+</address></author><author initials="P." surname="Thomassen" fullname="Peter Thomassen"><organization>SSE Secure Systems Engineering, deSEC</organization><address><postal><street></street>
+</postal><email>peter.thomassen@securesystems.de</email>
 </address></author><author initials="N." surname="Wisiol" fullname="Nils Wisiol"><organization>deSEC, Technische Universität Berlin</organization><address><postal><street></street>
 </postal><email>nils@desec.io</email>
 </address></author><date year="2022" month="August" day="18"></date>
@@ -15,13 +15,17 @@
 <workgroup>DNSOP Working Group</workgroup>
 
 <abstract>
-<t>DNSSEC (<xref target="RFC4035"></xref>) employs a number of zone signature algorithms.  When a zone
-is signed with an algorithm that is also supported by a given validating
-resolver, it MUST NOT be possible to hide this fact from the resolver and
-thereby convince it to accept unvalidated answers, i.e. downgrade the zone from
-&quot;Secure&quot; to &quot;Insecure&quot; (see section 4.3 of <xref target="RFC4035"></xref>).  How to avoid such
-downgrades in resolvers is not adequately covered in <xref target="RFC4035"></xref>, this document
-attempts to fill the gap.</t>
+<t>DNSSEC (<xref target="RFC4035"></xref>) allows a zone to be signed with multiple signature
+algorithms.
+When a zone is signed with an algorithm that is also supported by a given
+validating resolver, the resolver's validation strategy MUST NOT allow this
+fact to be overlooked, as the resolver could otherwise be convinced to regard
+the zone as &quot;Insecure&quot; instead of &quot;Secure&quot; and consequently accept unvalidated
+answers (see Section 4.3 of <xref target="RFC4035"></xref>), rendering DNSSEC fully ineffective.
+<xref target="RFC4035"></xref> and related documents arguably lack clarity on this palpable
+requirement.
+This document attempts to fill the gap by giving guidance on how to avoid such
+downgrade attacks in resolver implementations <xref target="RFC4035"></xref>.</t>
 <t>[ Ed note: This document is being collaborated on at
 <eref target="https://github.com/desec-io/draft-dukhovni-resolver-agility/">https://github.com/desec-io/draft-dukhovni-resolver-agility/</eref>.
 The authors gratefully accept pull requests. ]</t>
@@ -32,33 +36,41 @@ The authors gratefully accept pull requests. ]</t>
 <middle>
 
 <section anchor="introduction"><name>Introduction</name>
-<t>DNSSEC (<xref target="RFC4034"></xref>,<xref target="RFC4035"></xref>,<xref target="RFC5155"></xref>) employs a number of zone signing algorithms, some already
-obsolete, some mainstream and mandatory to implement, and others recommended to
-implement, but not yet widely deployed.  Validating resolvers generally support
-a range of algorithms beyond the mandatory to implement set.  Some that are
-deprecated, but still in use by a non-trivial number of deployed zones, others
-that are expected to be in wider use in the future.  The status of the various
-algorithms is noted in Section 3 of <xref target="RFC8624"></xref>, which is expected be updated
-in subsequent documents from time to time.</t>
-<t>Some zones may be signed with multiple algorithms.  Such multi-signed zones are
-typically in a transitional state from one algorithm to another, with at least
-the new algorithm expected to be widely deployed, allowing the older algorithm
-to be dropped at the end of the transition period.</t>
-<t>Therefore, when a zone is multi-signed, a resolver is expected to treat all
-the mutually supported signature algorithms as equally valid, and to accept
-valid signatures made via any of the supported algorithms.  This form of
-<em>algorithm agility</em> is not expected to ensure that the <em>strongest</em> of multiple
-shared algorithms is the only one used for validation, the sole requirement is
+<t>DNSSEC (with core specifications <xref target="RFC4033"></xref>, <xref target="RFC4034"></xref>, <xref target="RFC4035"></xref>,
+<xref target="RFC6840"></xref>) employs a number of zone signing algorithms, some already obsolete,
+some mainstream and mandatory to implement, and others recommended to implement,
+but not yet widely deployed.
+Validating resolvers generally support a range of algorithms beyond the
+mandatory to implement set: Some that are deprecated, but still in use by a
+non-trivial number of deployed zones, others that are expected to be in wider
+use in the future.
+The status of the various algorithms is noted in Section 3 of <xref target="RFC8624"></xref>, which
+is expected be updated in subsequent documents from time to time.</t>
+<t>Some zones may be signed with multiple algorithms.  Such multi-algorithm zones
+are typically in a transitional state from one algorithm to another, with at
+least the new algorithm expected to be widely deployed, allowing the older
+algorithm to be dropped at the end of the transition period.
+(For the rollover procedure, see <xref target="RFC6781"></xref> Section 4.1.4.)</t>
+<t>Algorithms that a zone is signed with are signaled via the delegation's DS
+record set which is signed and published by the parent.
+For each algorithm signaled this way, RRSIG signatures are expected to be
+present for each record in the zone (see Section 5.11 of <xref target="RFC6840"></xref>).</t>
+<t>Therefore, for a multi-algorithm zone, a resolver is expected to treat all the
+mutually supported signature algorithms as equally valid, and to accept valid
+signatures made via any of the supported algorithms (see Section 5.4 of
+<xref target="RFC6840"></xref>).
+This mechanism is not expected to ensure that the strongest of multiple shared
+algorithms is the only one used for validation; the sole requirement is
 resistance to downgrades of zones signed via a supported algorithm to
 &quot;Insecure&quot;.</t>
-<t>One or more algorithms (signaled via the respective DS record set) with which
-a zone is signed may not be supported by a
-given validating resolver, and when none are supported, absent local policy
-requiring the zone to be signed, the resolver MUST consider the zone &quot;Insecure&quot;
-(see Section 4.3 of <xref target="RFC4035"></xref>).  When, as explained in <xref target="algorithm-agility"></xref>
-below, the zone's signature algorithms overlap with those supported by the
-resolver, the zone MUST NOT be treated &quot;Insecure&quot; (even when no RRSIGs for
-supported algorithms are included in a given reply).</t>
+<t>A given validating resolver may not support one or more of the algorithms a zone
+is signed with.
+When none are supported, absent local policy requiring the zone to be signed,
+the resolver MUST consider the zone &quot;Insecure&quot; (see Section 4.3 of <xref target="RFC4035"></xref>).
+When, as explained in <xref target="requirements"></xref> below, the zone's signature algorithms
+overlap with those supported by the resolver, the zone MUST NOT be treated as
+&quot;Insecure&quot; (even when no RRSIGs for supported algorithms are included in a given
+reply).</t>
 
 <section anchor="requirements-notation"><name>Requirements Notation</name>
 <t>The key words &quot;<bcp14>MUST</bcp14>&quot;, &quot;<bcp14>MUST NOT</bcp14>&quot;, &quot;<bcp14>REQUIRED</bcp14>&quot;,
@@ -70,15 +82,15 @@ capitals, as shown here.</t>
 </section>
 </section>
 
-<section anchor="algorithm-agility"><name>Algorithm agility</name>
+<section anchor="requirements"><name>Requirements on Signature Algorithms Present in DNSSEC Zones and Answers</name>
 <t>[[ Explain algorithm agility for DS records and that if a supported combination
    of signature and hash algorithms is found there, the resolver MUST check that
    the zone apex DNSKEY RRset has at least one valid signature made with a key
    (SEP) matching a supported DS record (or any local trust anchor), otherwise the
    entire zone is &quot;Bogus&quot; for lack of a &quot;Secure Entry Point&quot; (SEP).</t>
 <t>The zone's candidate signing keys are then those zone apex DNSKEYs with
-   protocol 3 (see section 2.1.2 of <xref target="RFC4034"></xref>)) and the &quot;Zone Key&quot; flag bit
-   set (see section 2.1.1 of <xref target="RFC4034"></xref>).  The zone signer MUST ensure that
+   protocol 3 (see Section 2.1.2 of <xref target="RFC4034"></xref>)) and the &quot;Zone Key&quot; flag bit
+   set (see Section 2.1.1 of <xref target="RFC4034"></xref>).  The zone signer MUST ensure that
    each record in the zone has a signature made with each algorithm associated
    with some candidate zone signing key.</t>
 <t>The requirements on the validating resolver are somewhat less strict, if the
@@ -114,9 +126,11 @@ DNSSEC downgrades to &quot;Insecure&quot;.</t>
 <back>
 <references><name>Normative References</name>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4033.xml"/>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4034.xml"/>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4035.xml"/>
-<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.5155.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6781.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6840.xml"/>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8624.xml"/>
 </references>
