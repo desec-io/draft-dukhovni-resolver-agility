@@ -114,8 +114,8 @@ capitals, as shown here.
    entire zone is "Bogus" for lack of a "Secure Entry Point" (SEP).
 
    The zone's candidate signing keys are then those zone apex DNSKEYs with
-   protocol 3 (see section 2.1.2 of [@!RFC4035])) and the "Zone Key" flag bit
-   set (see section 2.1.1 of [@!RFC4035]).  The zone signer MUST ensure that
+   protocol 3 (see section 2.1.2 of [@!RFC4034])) and the "Zone Key" flag bit
+   set (see section 2.1.1 of [@!RFC4034]).  The zone signer MUST ensure that
    each record in the zone has a signature made with each algorithm associated
    with some candidate zone signing key.
 
