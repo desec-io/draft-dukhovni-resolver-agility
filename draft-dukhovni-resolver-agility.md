@@ -84,7 +84,8 @@ shared algorithms is the only one used for validation, the sole requirement is
 resistance to downgrades of zones signed via a supported algorithm to
 "Insecure".
 
-One or more algorithms with which a zone is signed may not be supported by a
+One or more algorithms (signaled via the respective DS record set) with which
+a zone is signed may not be supported by a
 given validating resolver, and when none are supported, absent local policy
 requiring the zone to be signed, the resolver MUST consider the zone "Insecure"
 (see Section 4.3 of [@!RFC4035]).  When, as explained in (#algorithm-agility)
