@@ -46,8 +46,12 @@ organization = "deSEC, Technische Universität Berlin"
 
 .# Abstract
 
-DNSSEC ([@!RFC4035]) allows a zone to be signed with multiple signature
-algorithms.
+DNSSEC [@!RFC4035] allows RRsets to be accompanied with multiple RRSIGs,
+generated using different keys and even different signature algorithms.
+This document is concerned with clarifications around the validation of RRsets,
+in particular in presence of DS and/or DNSKEY records defining more than one
+DNSSEC signature algorithm.
+
 When a zone is signed with an algorithm that is also supported by a given
 validating resolver, the resolver's validation strategy MUST NOT allow this
 fact to be overlooked, as the resolver could otherwise be convinced to regard
@@ -55,6 +59,7 @@ the zone as "Insecure" instead of "Secure" and consequently accept unvalidated
 answers (see Section 4.3 of [@!RFC4035]), rendering DNSSEC fully ineffective.
 [@!RFC4035] and related documents arguably lack clarity on this palpable
 requirement.
+
 This document attempts to fill the gap by giving guidance on how to avoid such
 downgrade attacks in resolver implementations [@!RFC4035].
 
