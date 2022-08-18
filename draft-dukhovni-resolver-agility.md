@@ -68,7 +68,7 @@ implement, but not yet widely deployed.  Validating resolvers generally support
 a range of algorithms beyond the mandatory to implement set.  Some that are
 deprecated, but still in use by a non-trivial number of deployed zones, others
 that are expected to be in wider use in the future.  The status of the various
-algorithms is noted in Section 3 of [@!RFC4035], which is expected be updated
+algorithms is noted in Section 3 of [@!RFC8624], which is expected be updated
 in subsequent documents from time to time.
 
 Some zones may be signed with multiple algorithms.  Such multi-signed zones are
