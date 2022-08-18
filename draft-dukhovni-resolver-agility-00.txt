@@ -1,0 +1,280 @@
+
+
+
+
+DNSOP Working Group                                          V. Dukhovni
+Internet-Draft                                                Google LLC
+Updates: 4035 (if approved)                                 P. Thomassen
+Intended status: Standards Track       deSEC, Secure Systems Engineering
+Expires: 19 February 2023                                      N. Wisiol
+                                    deSEC, Technische Universität Berlin
+                                                          18 August 2022
+
+
+      Validating DNSSEC resolver algorithm agility clarifications
+                   draft-dukhovni-resolver-agility-00
+
+Abstract
+
+   DNSSEC ([RFC4035]) employs a number of zone signature algorithms.
+   When a zone is signed with an algorithm that is also supported by a
+   given validating resolver, it MUST NOT be possible to hide this fact
+   from the resolver and thereby convince it to accept unvalidated
+   answers, i.e. downgrade the zone from "Secure" to "Insecure" (see
+   section 4.3 of [RFC4035]).  How to avoid such downgrades in resolvers
+   is not adequately covered in [RFC4035], this document attempts to
+   fill the gap.
+
+   [ Ed note: This document is being collaborated on at
+   https://github.com/desec-io/draft-dukhovni-resolver-agility/
+   (https://github.com/desec-io/draft-dukhovni-resolver-agility/).  The
+   authors gratefully accept pull requests. ]
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 19 February 2023.
+
+
+
+
+
+
+
+Dukhovni, et al.        Expires 19 February 2023                [Page 1]
+
+Internet-Draft              resolver-agility                 August 2022
+
+
+Copyright Notice
+
+   Copyright (c) 2022 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+     1.1.  Requirements Notation . . . . . . . . . . . . . . . . . .   3
+   2.  Algorithm agility . . . . . . . . . . . . . . . . . . . . . .   3
+   3.  Security Considerations . . . . . . . . . . . . . . . . . . .   4
+   4.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   4
+   5.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   4
+   6.  Normative References  . . . . . . . . . . . . . . . . . . . .   4
+   Appendix A.  Change History (to be removed before publication)  .   4
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .   5
+
+1.  Introduction
+
+   DNSSEC ([RFC4034],[RFC4035],[RFC5155]) employs a number of zone
+   signing algorithms, some already obsolete, some mainstream and
+   mandatory to implement, and others recommended to implement, but not
+   yet widely deployed.  Validating resolvers generally support a range
+   of algorithms beyond the mandatory to implement set.  Some that are
+   deprecated, but still in use by a non-trivial number of deployed
+   zones, others that are expected to be in wider use in the future.
+   The status of the various algorithms is noted in Section 3 of
+   [RFC4035], which is expected be updated in subsequent documents from
+   time to time.
+
+   Some zones may be signed with multiple algorithms.  Such multi-signed
+   zones are typically in a transitional state from one algorithm to
+   another, with at least the new algorithm expected to be widely
+   deployed, allowing the older algorithm to be dropped at the end of
+   the transition period.
+
+   Therefore, when a zone is multi-signed, a resolver is expected to
+   treat all the mutually supported signature algorithms as equally
+   valid, and to accept valid signatures made via any of the supported
+
+
+
+Dukhovni, et al.        Expires 19 February 2023                [Page 2]
+
+Internet-Draft              resolver-agility                 August 2022
+
+
+   algorithms.  This form of _algorithm agility_ is not expected to
+   ensure that the _strongest_ of multiple shared algorithms is the only
+   one used for validation, the sole requirement is resistance to
+   downgrades of zones signed via a supported algorithm to "Insecure".
+
+   One or more algorithms with which a zone is signed may not be
+   supported by a given validating resolver, and when none are
+   supported, absent local policy requiring the zone to be signed, the
+   resolver MUST consider the zone "Insecure" (see Section 4.3 of
+   [RFC4035]).  When, as explained in Section 2 below, the zone's
+   signature algorithms overlap with those supported by the resolver,
+   the zone MUST NOT be treated "Insecure" (even when no RRSIGs for
+   supported algorithms are included in a given reply).
+
+1.1.  Requirements Notation
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in BCP
+   14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+2.  Algorithm agility
+
+   [[ Explain algorithm agility for DS records and that if a supported
+   combination if signature and hash algorithms is found there, the
+   resolver MUST check that the zone apex DNSKEY RRset has at least one
+   valid signature made with a key (SEP) matching a supported DS record
+   (or any local trust anchor), otherwise the entire zone is "Bogus" for
+   lack of a "Secure Entry Point" (SEP).
+
+   The zone's candidate signing keys are then those zone apex DNSKEYs
+   with protocol 3 (see section 2.1.2 of [RFC4035])) and the "Zone Key"
+   flag bit set (see section 2.1.1 of [RFC4035]).  The zone signer MUST
+   ensure that each record in the zone has a signature made with each
+   algorithm associated with some candidate zone signing key.
+
+   The requirements on the validating resolver are somewhat less strict,
+   if the zone is not "Insecure", for lack of a supported DS record in
+   the parent zone (or a alternatively a local trust anchor), then the
+   resolver MUST only require that at least one supported validatable
+   RRSIG sign each RRset for which the zone is authoritative (i.e.
+   everything other than delegation NS and glue address records).
+
+   This means that a resolver SHOULD accept a response signed with only
+   a subset of the required signature algorithms, so long at least one
+   of these signatures is supported and valid (passes signature
+   validation, is not expired and made by a candidate key).
+
+
+
+Dukhovni, et al.        Expires 19 February 2023                [Page 3]
+
+Internet-Draft              resolver-agility                 August 2022
+
+
+   If a zone is not signed with all the required algorithms, it may
+   appear "Bogus" to resolvers that only support the missing algorithms,
+   so all the required signatures MUST be present, but resolvers SHOULD
+   NOT enforce this.  ... ]]
+
+3.  Security Considerations
+
+   This entire document discusses security considerations relating to
+   avoiding DNSSEC downgrades to "Insecure".
+
+4.  IANA Considerations
+
+   None
+
+5.  Acknowledgements
+
+6.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC4034]  Arends, R., Austein, R., Larson, M., Massey, D., and S.
+              Rose, "Resource Records for the DNS Security Extensions",
+              RFC 4034, DOI 10.17487/RFC4034, March 2005,
+              <https://www.rfc-editor.org/info/rfc4034>.
+
+   [RFC4035]  Arends, R., Austein, R., Larson, M., Massey, D., and S.
+              Rose, "Protocol Modifications for the DNS Security
+              Extensions", RFC 4035, DOI 10.17487/RFC4035, March 2005,
+              <https://www.rfc-editor.org/info/rfc4035>.
+
+   [RFC5155]  Laurie, B., Sisson, G., Arends, R., and D. Blacka, "DNS
+              Security (DNSSEC) Hashed Authenticated Denial of
+              Existence", RFC 5155, DOI 10.17487/RFC5155, March 2008,
+              <https://www.rfc-editor.org/info/rfc5155>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/info/rfc8174>.
+
+Appendix A.  Change History (to be removed before publication)
+
+   *  draft-dukhovni-resolver-agility-00
+
+   |  Initial public draft.
+
+
+
+
+Dukhovni, et al.        Expires 19 February 2023                [Page 4]
+
+Internet-Draft              resolver-agility                 August 2022
+
+
+Authors' Addresses
+
+   Viktor Dukhovni
+   Google LLC
+   Email: ietf-dane@dukhovni.org
+
+
+   Peter Thomassen
+   deSEC, Secure Systems Engineering
+   Email: peter@desec.io
+
+
+   Nils Wisiol
+   deSEC, Technische Universität Berlin
+   Email: nils@desec.io
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Dukhovni, et al.        Expires 19 February 2023                [Page 5]
