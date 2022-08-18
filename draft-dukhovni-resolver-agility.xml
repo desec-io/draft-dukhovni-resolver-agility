@@ -51,7 +51,8 @@ valid signatures made via any of the supported algorithms.  This form of
 shared algorithms is the only one used for validation, the sole requirement is
 resistance to downgrades of zones signed via a supported algorithm to
 &quot;Insecure&quot;.</t>
-<t>One or more algorithms with which a zone is signed may not be supported by a
+<t>One or more algorithms (signaled via the respective DS record set) with which
+a zone is signed may not be supported by a
 given validating resolver, and when none are supported, absent local policy
 requiring the zone to be signed, the resolver MUST consider the zone &quot;Insecure&quot;
 (see Section 4.3 of <xref target="RFC4035"></xref>).  When, as explained in <xref target="algorithm-agility"></xref>
@@ -71,13 +72,13 @@ capitals, as shown here.</t>
 
 <section anchor="algorithm-agility"><name>Algorithm agility</name>
 <t>[[ Explain algorithm agility for DS records and that if a supported combination
-   if signature and hash algorithms is found there, the resolver MUST check that
+   of signature and hash algorithms is found there, the resolver MUST check that
    the zone apex DNSKEY RRset has at least one valid signature made with a key
    (SEP) matching a supported DS record (or any local trust anchor), otherwise the
    entire zone is &quot;Bogus&quot; for lack of a &quot;Secure Entry Point&quot; (SEP).</t>
 <t>The zone's candidate signing keys are then those zone apex DNSKEYs with
-   protocol 3 (see section 2.1.2 of <xref target="RFC4035"></xref>)) and the &quot;Zone Key&quot; flag bit
-   set (see section 2.1.1 of <xref target="RFC4035"></xref>).  The zone signer MUST ensure that
+   protocol 3 (see section 2.1.2 of <xref target="RFC4034"></xref>)) and the &quot;Zone Key&quot; flag bit
+   set (see section 2.1.1 of <xref target="RFC4034"></xref>).  The zone signer MUST ensure that
    each record in the zone has a signature made with each algorithm associated
    with some candidate zone signing key.</t>
 <t>The requirements on the validating resolver are somewhat less strict, if the

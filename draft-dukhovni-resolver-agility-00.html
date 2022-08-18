@@ -1356,7 +1356,8 @@ valid signatures made via any of the supported algorithms.  This form of
 shared algorithms is the only one used for validation, the sole requirement is
 resistance to downgrades of zones signed via a supported algorithm to
 "Insecure".<a href="#section-1-3" class="pilcrow">¶</a></p>
-<p id="section-1-4">One or more algorithms with which a zone is signed may not be supported by a
+<p id="section-1-4">One or more algorithms (signaled via the respective DS record set) with which
+a zone is signed may not be supported by a
 given validating resolver, and when none are supported, absent local policy
 requiring the zone to be signed, the resolver MUST consider the zone "Insecure"
 (see Section 4.3 of <span>[<a href="#RFC4035" class="xref">RFC4035</a>]</span>).  When, as explained in <a href="#algorithm-agility" class="xref">Section 2</a>
@@ -1384,13 +1385,13 @@ capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
 <a href="#section-2" class="section-number selfRef">2. </a><a href="#name-algorithm-agility" class="section-name selfRef">Algorithm agility</a>
       </h2>
 <p id="section-2-1">[[ Explain algorithm agility for DS records and that if a supported combination
-   if signature and hash algorithms is found there, the resolver MUST check that
+   of signature and hash algorithms is found there, the resolver MUST check that
    the zone apex DNSKEY RRset has at least one valid signature made with a key
    (SEP) matching a supported DS record (or any local trust anchor), otherwise the
    entire zone is "Bogus" for lack of a "Secure Entry Point" (SEP).<a href="#section-2-1" class="pilcrow">¶</a></p>
 <p id="section-2-2">The zone's candidate signing keys are then those zone apex DNSKEYs with
-   protocol 3 (see section 2.1.2 of <span>[<a href="#RFC4035" class="xref">RFC4035</a>]</span>)) and the "Zone Key" flag bit
-   set (see section 2.1.1 of <span>[<a href="#RFC4035" class="xref">RFC4035</a>]</span>).  The zone signer MUST ensure that
+   protocol 3 (see section 2.1.2 of <span>[<a href="#RFC4034" class="xref">RFC4034</a>]</span>)) and the "Zone Key" flag bit
+   set (see section 2.1.1 of <span>[<a href="#RFC4034" class="xref">RFC4034</a>]</span>).  The zone signer MUST ensure that
    each record in the zone has a signature made with each algorithm associated
    with some candidate zone signing key.<a href="#section-2-2" class="pilcrow">¶</a></p>
 <p id="section-2-3">The requirements on the validating resolver are somewhat less strict, if the
