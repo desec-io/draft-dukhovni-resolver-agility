@@ -38,7 +38,7 @@ implement, but not yet widely deployed.  Validating resolvers generally support
 a range of algorithms beyond the mandatory to implement set.  Some that are
 deprecated, but still in use by a non-trivial number of deployed zones, others
 that are expected to be in wider use in the future.  The status of the various
-algorithms is noted in Section 3 of <xref target="RFC4035"></xref>, which is expected be updated
+algorithms is noted in Section 3 of <xref target="RFC8624"></xref>, which is expected be updated
 in subsequent documents from time to time.</t>
 <t>Some zones may be signed with multiple algorithms.  Such multi-signed zones are
 typically in a transitional state from one algorithm to another, with at least
@@ -117,6 +117,7 @@ DNSSEC downgrades to &quot;Insecure&quot;.</t>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4035.xml"/>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.5155.xml"/>
 <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8624.xml"/>
 </references>
 
 <section anchor="change-history-to-be-removed-before-publication"><name>Change History (to be removed before publication)</name>

@@ -81,7 +81,7 @@ Table of Contents
    4.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   4
    5.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   4
    6.  Normative References  . . . . . . . . . . . . . . . . . . . .   4
-   Appendix A.  Change History (to be removed before publication)  .   4
+   Appendix A.  Change History (to be removed before publication)  .   5
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .   5
 
 1.  Introduction
@@ -94,7 +94,7 @@ Table of Contents
    deprecated, but still in use by a non-trivial number of deployed
    zones, others that are expected to be in wider use in the future.
    The status of the various algorithms is noted in Section 3 of
-   [RFC4035], which is expected be updated in subsequent documents from
+   [RFC8624], which is expected be updated in subsequent documents from
    time to time.
 
    Some zones may be signed with multiple algorithms.  Such multi-signed
@@ -212,11 +212,11 @@ Internet-Draft              resolver-agility                 August 2022
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/info/rfc8174>.
 
-Appendix A.  Change History (to be removed before publication)
+   [RFC8624]  Wouters, P. and O. Sury, "Algorithm Implementation
+              Requirements and Usage Guidance for DNSSEC", RFC 8624,
+              DOI 10.17487/RFC8624, June 2019,
+              <https://www.rfc-editor.org/info/rfc8624>.
 
-   *  draft-dukhovni-resolver-agility-00
-
-   |  Initial public draft.
 
 
 
@@ -225,6 +225,12 @@ Dukhovni, et al.        Expires 19 February 2023                [Page 4]
 
 Internet-Draft              resolver-agility                 August 2022
 
+
+Appendix A.  Change History (to be removed before publication)
+
+   *  draft-dukhovni-resolver-agility-00
+
+   |  Initial public draft.
 
 Authors' Addresses
 
@@ -241,12 +247,6 @@ Authors' Addresses
    Nils Wisiol
    deSEC, Technische Universität Berlin
    Email: nils@desec.io
-
-
-
-
-
-
 
 
 
