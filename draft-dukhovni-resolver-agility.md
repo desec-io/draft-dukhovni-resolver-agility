@@ -118,6 +118,51 @@ capitals, as shown here.
 {#requirements}
 # Requirements on Signature Algorithms Present in DNSSEC Zones and Answers
 
+RFC 4035 Sec. 4.3: Definitions for Secure, Insecure, Bogus, Indeterminate
+Secure: has chain of trust
+Insecure: RRset lies in unsigned zone or decendant of unsigned zone
+Bogus: resolver believes there ought to be a chain of trust
+
+## Signer Requirements
+
+- RFC 4035 Sec. 2.2: The apex DNSKEY RRset
+   itself MUST be signed by each algorithm appearing in the DS RRset
+   located at the delegating parent (if any).
+- RFC 6840 Sec. 5.11: The presence of an algorithm in either a
+      zone's DS or DNSKEY RRset signals that that algorithm is used to
+      sign the entire zone.
+      ...
+      It is possible to add algorithms at
+      the DNSKEY that aren't in the DS record, but not vice versa. 
+
+## Validator Requirements
+
+- RFC 4035 Sec. 5: Validator uses local configuration or relevant (Secure) DS records to determine if it "SHOULD believe that a zone is signed". I.e., if configuration or DS record is present, Insecure status is ruled out. In contrast, RFC 4035 Sec. 4.3 (Definition Insecure) makes explicit that Insecure RRsets may or may not be signed, so that the presence of signature cannot be used to determine the zone's security status.
+
+- RFC 4035 Sec. 5.5: Mandate to SERVFAIL if none of the RRSIGs can be validated
+
+- RFC 4035 Sec. 5.2: Mandate to Insecure if no DS algo is supported
+
+- RFC 4035 Sec. 5: resolver SHOULD believe that a zone is signed if the
+   resolver has been configured with public key information for the
+   zone, or if the zone's parent is signed and the delegation from the
+   parent contains a DS RRset.
+
+- RFC 6840 Sec. 5.11: Validators
+   SHOULD accept any single valid path.  They SHOULD NOT insist that all
+   algorithms signaled in the DS RRset work, and they MUST NOT insist
+   that all algorithms signaled in the DNSKEY RRset work.
+- RFC 6840 Sec. 5.2: In brief, DS records
+   using unknown or unsupported message digest algorithms MUST be
+   treated the same way as DS records referring to DNSKEY RRs of unknown
+   or unsupported public key algorithms.
+- RFC 6840 Sec. 5.2:
+    In other words, when determining the security status of a zone, a
+   validator disregards any authenticated DS records that specify
+   unknown or unsupported DNSKEY algorithms.  If none are left, the zone
+   is treated as if it were unsigned.
+
+
 [[ Explain algorithm agility for DS records and that if a supported combination
    of signature and hash algorithms is found there, the resolver MUST check that
    the zone apex DNSKEY RRset has at least one valid signature made with a key
