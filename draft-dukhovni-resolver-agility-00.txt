@@ -6,9 +6,9 @@ DNSOP Working Group                                          V. Dukhovni
 Internet-Draft                                                Google LLC
 Updates: 4035 (if approved)                                 P. Thomassen
 Intended status: Standards Track   SSE Secure Systems Engineering, deSEC
-Expires: 26 February 2023                                      N. Wisiol
+Expires: 2 March 2023                                          N. Wisiol
                                     deSEC, Technische Universität Berlin
-                                                          25 August 2022
+                                                          29 August 2022
 
 
    Clarifications on Signature Algorithm Presence in DNSSEC Zones and
@@ -46,14 +46,14 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 26 February 2023.
+   This Internet-Draft will expire on 2 March 2023.
 
 
 
 
 
 
-Dukhovni, et al.        Expires 26 February 2023                [Page 1]
+Dukhovni, et al.          Expires 2 March 2023                  [Page 1]
 
 Internet-Draft              resolver-agility                 August 2022
 
@@ -78,12 +78,13 @@ Table of Contents
      1.1.  Requirements Notation . . . . . . . . . . . . . . . . . .   3
    2.  Requirements on Signature Algorithms Present in DNSSEC Zones
            and Answers . . . . . . . . . . . . . . . . . . . . . . .   3
-     2.1.  Signer Requirements . . . . . . . . . . . . . . . . . . .   3
-     2.2.  Validator Requirements  . . . . . . . . . . . . . . . . .   4
-   3.  Security Considerations . . . . . . . . . . . . . . . . . . .   5
-   4.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   5
-   5.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   5
-   6.  Normative References  . . . . . . . . . . . . . . . . . . . .   5
+     2.1.  Validation Requirements . . . . . . . . . . . . . . . . .   4
+     2.2.  Signer Requirements . . . . . . . . . . . . . . . . . . .   4
+   3.  Discussion  . . . . . . . . . . . . . . . . . . . . . . . . .   5
+   4.  Security Considerations . . . . . . . . . . . . . . . . . . .   5
+   5.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   5
+   6.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   5
+   7.  Normative References  . . . . . . . . . . . . . . . . . . . .   5
    Appendix A.  Change History (to be removed before publication)  .   6
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .   6
 
@@ -100,19 +101,25 @@ Table of Contents
    algorithms is noted in Section 3 of [RFC8624], which is expected be
    updated in subsequent documents from time to time.
 
+
+
+
+
+
+
+
+
+Dukhovni, et al.          Expires 2 March 2023                  [Page 2]
+
+Internet-Draft              resolver-agility                 August 2022
+
+
    Some zones may be signed with multiple algorithms.  Such multi-
    algorithm zones are typically in a transitional state from one
    algorithm to another, with at least the new algorithm expected to be
    widely deployed, allowing the older algorithm to be dropped at the
    end of the transition period.  (For the rollover procedure, see
    [RFC6781] Section 4.1.4.)
-
-
-
-Dukhovni, et al.        Expires 26 February 2023                [Page 2]
-
-Internet-Draft              resolver-agility                 August 2022
-
 
    Algorithms that a zone is signed with are signaled via the
    delegation's DS record set which is signed and published by the
@@ -149,118 +156,110 @@ Internet-Draft              resolver-agility                 August 2022
 2.  Requirements on Signature Algorithms Present in DNSSEC Zones and
     Answers
 
-   RFC 4035 Sec. 4.3: Definitions for Secure, Insecure, Bogus,
-   Indeterminate Secure: has chain of trust Insecure: RRset lies in
-   unsigned zone or decendant of unsigned zone Bogus: resolver believes
-   there ought to be a chain of trust
-
-2.1.  Signer Requirements
-
-   *  RFC 4035 Sec. 2.2: The apex DNSKEY RRset itself MUST be signed by
-      each algorithm appearing in the DS RRset located at the delegating
-      parent (if any).
 
 
 
 
 
 
-Dukhovni, et al.        Expires 26 February 2023                [Page 3]
+
+
+
+Dukhovni, et al.          Expires 2 March 2023                  [Page 3]
 
 Internet-Draft              resolver-agility                 August 2022
 
 
-   *  RFC 6840 Sec. 5.11: The presence of an algorithm in either a
-      zone's DS or DNSKEY RRset signals that that algorithm is used to
-      sign the entire zone.  ...  It is possible to add algorithms at
-      the DNSKEY that aren't in the DS record, but not vice versa.
+2.1.  Validation Requirements
 
-2.2.  Validator Requirements
+   The DS RRset of a zone may contain information on keys of several
+   different algorithms; this is regularly the case in the context of
+   algorithm rollover (Section 4.1.4 [RFC6781]).  The DS records
+   relevant for validation of the DNSKEY RRset of a zone are Secure
+   records with supported signature and digest algorithms and any such
+   local trunst anchors.
 
-   *  RFC 4035 Sec. 5: Validator uses local configuration or relevant
-      (Secure) DS records to determine if it "SHOULD believe that a zone
-      is signed".  I.e., if configuration or DS record is present,
-      Insecure status is ruled out.  In contrast, RFC 4035 Sec. 4.3
-      (Definition Insecure) makes explicit that Insecure RRsets may or
-      may not be signed, so that the presence of signature cannot be
-      used to determine the zone's security status.
+   If no DS records are supported (including the case when there are no
+   DS records), the zone MUST be treated as Insecure (Section 5.2 of
+   [RFC4035]; Section 5.2 of [RFC6840]).  If DS records are supported,
+   the zone SHOULD NOT be treated as Insecure (Section 5 of [RFC4035]).
+   The zone's candidate signing keys are those from the DNSKEY RRset
+   that match(*) any supported DS record and have protocol 3 and have
+   the "Zone Key" flag bit set.  Note that the "Secure Entry Point" bit
+   is informational only and MUST be ignored by validators
+   (Section 2.1.1 of [RFC4043]).
 
-   *  RFC 4035 Sec. 5.5: Mandate to SERVFAIL if none of the RRSIGs can
-      be validated
+   If validation of the DNSKEY RRset fails, queries to the entire zone
+   (and DNS subtree) MUST be answered with SERVFAIL (Section 5.5 of
+   [RFC4035]).  If validation succeeds, all supported keys in the DNSKEY
+   RRset with protocol 3 and "Zone Key" flag bit set may be used to
+   validate records of the zone.
 
-   *  RFC 4035 Sec. 5.2: Mandate to Insecure if no DS algo is supported
+   [[ (*) Define/refer to definition of "matches"? ]]
 
-   *  RFC 4035 Sec. 5: resolver SHOULD believe that a zone is signed if
-      the resolver has been configured with public key information for
-      the zone, or if the zone's parent is signed and the delegation
-      from the parent contains a DS RRset.
+   For validation of the DNSKEY and any other RRset, one validation path
+   against the keys outlined above is sufficient to validate.  In more
+   detail, validators SHOULD accept any single valid path.  They SHOULD
+   NOT insist that all algorithms signaled in the DS RRset work, and
+   they MUST NOT insist that all algorithms signaled in the DNSKEY RRset
+   work.  (Section 5.11 of [RFC6840])
 
-   *  RFC 6840 Sec. 5.11: Validators SHOULD accept any single valid
-      path.  They SHOULD NOT insist that all algorithms signaled in the
-      DS RRset work, and they MUST NOT insist that all algorithms
-      signaled in the DNSKEY RRset work.
+2.2.  Signer Requirements
 
-   *  RFC 6840 Sec. 5.2: In brief, DS records using unknown or
-      unsupported message digest algorithms MUST be treated the same way
-      as DS records referring to DNSKEY RRs of unknown or unsupported
-      public key algorithms.
-
-   *  RFC 6840 Sec. 5.2: In other words, when determining the security
-      status of a zone, a validator disregards any authenticated DS
-      records that specify unknown or unsupported DNSKEY algorithms.  If
-      none are left, the zone is treated as if it were unsigned.
-
-   [[ Explain algorithm agility for DS records and that if a supported
-   combination of signature and hash algorithms is found there, the
-   resolver MUST check that the zone apex DNSKEY RRset has at least one
-   valid signature made with a key (SEP) matching a supported DS record
-   (or any local trust anchor), otherwise the entire zone is "Bogus" for
-   lack of a "Secure Entry Point" (SEP).
+   The zone signer MUST ensure that each record in the zone has a
+   signature made with each algorithm associated with some candidate
+   zone signing key (Section 5.11 of [RFC6840]).  It is possible to add
+   algorithms at the DNSKEY that aren't in the DS record, but not vice
+   versa.
 
 
 
 
 
-Dukhovni, et al.        Expires 26 February 2023                [Page 4]
+
+
+
+
+
+Dukhovni, et al.          Expires 2 March 2023                  [Page 4]
 
 Internet-Draft              resolver-agility                 August 2022
 
 
-   The zone's candidate signing keys are then those zone apex DNSKEYs
-   with protocol 3 (see Section 2.1.2 of [RFC4034])) and the "Zone Key"
-   flag bit set (see Section 2.1.1 of [RFC4034]).  The zone signer MUST
-   ensure that each record in the zone has a signature made with each
-   algorithm associated with some candidate zone signing key.
+3.  Discussion
 
-   The requirements on the validating resolver are somewhat less strict,
-   if the zone is not "Insecure", for lack of a supported DS record in
-   the parent zone (or a alternatively a local trust anchor), then the
-   resolver MUST only require that at least one supported validatable
-   RRSIG sign each RRset for which the zone is authoritative (i.e.
-   everything other than delegation NS and glue address records).
+   The requirement for the signer to use all available algorithms and
+   the requirement for the validator to accept any supported validation
+   path enable secure algorithm rollovers.  This implies that validation
+   of a zone can happen whenever there is an intersection of the
+   algorithm support of signer and validator.
 
-   This means that a resolver SHOULD accept a response signed with only
-   a subset of the required signature algorithms, so long at least one
-   of these signatures is supported and valid (passes signature
-   validation, is not expired and made by a candidate key).
+   If, in violation of the standard, a zone is not signed with all the
+   required algorithms, it may fail validation at resolvers that only
+   support the missing algorithms.
 
-   If a zone is not signed with all the required algorithms, it may
-   appear "Bogus" to resolvers that only support the missing algorithms,
-   so all the required signatures MUST be present, but resolvers SHOULD
-   NOT enforce this.  ... ]]
+   If, in violation of the standard, a validator insists on validating
+   signatures for all algorithms, it may fail validation for zones that
+   use unsupported algorithms.
 
-3.  Security Considerations
+   If the standard was changed such that the signer is only required to
+   sign with a single algorithm of its choice, then validators that do
+   not support one of the algorithms used in the zone may not be able to
+   validate the zone's RRsets.  This would result in either
+   unavailability or degrated security of the zone.
+
+4.  Security Considerations
 
    This entire document discusses security considerations relating to
    avoiding DNSSEC downgrades to "Insecure".
 
-4.  IANA Considerations
+5.  IANA Considerations
 
    None
 
-5.  Acknowledgements
+6.  Acknowledgements
 
-6.  Normative References
+7.  Normative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -277,7 +276,8 @@ Internet-Draft              resolver-agility                 August 2022
 
 
 
-Dukhovni, et al.        Expires 26 February 2023                [Page 5]
+
+Dukhovni, et al.          Expires 2 March 2023                  [Page 5]
 
 Internet-Draft              resolver-agility                 August 2022
 
@@ -291,6 +291,11 @@ Internet-Draft              resolver-agility                 August 2022
               Rose, "Protocol Modifications for the DNS Security
               Extensions", RFC 4035, DOI 10.17487/RFC4035, March 2005,
               <https://www.rfc-editor.org/info/rfc4035>.
+
+   [RFC4043]  Pinkas, D. and T. Gindin, "Internet X.509 Public Key
+              Infrastructure Permanent Identifier", RFC 4043,
+              DOI 10.17487/RFC4043, May 2005,
+              <https://www.rfc-editor.org/info/rfc4043>.
 
    [RFC6781]  Kolkman, O., Mekking, W., and R. Gieben, "DNSSEC
               Operational Practices, Version 2", RFC 6781,
@@ -324,18 +329,18 @@ Authors' Addresses
    Email: ietf-dane@dukhovni.org
 
 
+
+
+
+
+Dukhovni, et al.          Expires 2 March 2023                  [Page 6]
+
+Internet-Draft              resolver-agility                 August 2022
+
+
    Peter Thomassen
    SSE Secure Systems Engineering, deSEC
    Email: peter.thomassen@securesystems.de
-
-
-
-
-
-
-Dukhovni, et al.        Expires 26 February 2023                [Page 6]
-
-Internet-Draft              resolver-agility                 August 2022
 
 
    Nils Wisiol
@@ -384,9 +389,4 @@ Internet-Draft              resolver-agility                 August 2022
 
 
 
-
-
-
-
-
-Dukhovni, et al.        Expires 26 February 2023                [Page 7]
+Dukhovni, et al.          Expires 2 March 2023                  [Page 7]
