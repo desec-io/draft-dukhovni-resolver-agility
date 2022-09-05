@@ -51,10 +51,12 @@ algorithms.
 When the DS record set for a zone securely indicates that the zone is
 signed using at least one algorithm supported by the validator, the validator
 MUST NOT treat this zone as "Insecure" (see Section 4.3 of [@!RFC4035]).
+Not following this strategy would effectively condone unvalidated answers
+against better knowledge, rendering DNSSEC ineffective.
 [@!RFC4035] and related documents arguably lack clarity on this palpable
 requirement.
 This document attempts to fill the gap by giving guidance on how to avoid such
-downgrade attacks in resolver implementations [@!RFC4035].
+downgrade attacks in resolver implementations.
 
 [ Ed note: This document is being collaborated on at
 <https://github.com/desec-io/draft-dukhovni-resolver-agility/>.
