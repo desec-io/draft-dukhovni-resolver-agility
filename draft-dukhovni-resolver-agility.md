@@ -121,30 +121,95 @@ capitals, as shown here.
 {#requirements}
 # Requirements on Signature Algorithms Present in DNSSEC Zones and Answers
 
+To include a child domain in the parent's DNSSEC chain of trust, the parent
+provides a cryptographic link to the child.
+The parent does this by computing cryptographic hashes of the DNSSEC keys that
+the child wishes to be included in the delegation.
+As various hash digest algorithms are available, the chosen algorithm is
+recorded alongside each fingerprint.
+This information, together with the key's signing algorithm (and some derived
+"keytag" metadata), is included in the parent zone in the form of "Delegation
+Signer" (DS) records, alongside the delegation's NS (and glue) records.
+
+Due to the degree of freedom in choosing the hash algorithm, the parent may
+publish several DS records for each key (one per hash algorithm).
+Typically, one or two DS records are published for a given key ([@!RFC8624]
+Section 3.3).
+
+A domain's delegation thus has at least one DS record for each child DNSSEC key
+that the child has designated to be included in the delegation.
+The DS record's hash digest algorithm and the associated key's signing algorithm
+can easily be seen by inspection of the DS record data.
+
+Note that the hash digest algorithm used for DS record preparation is not to be
+confused with the signing algorithm of the DNSSEC key associated with that DS
+record.
+
+
 ## Validation Requirements
 
-The DS RRset of a zone may contain information on keys of several different algorithms;
-this is regularly the case in the context of algorithm rollover (Section 4.1.4 [@!RFC6781]).
-The DS records relevant for validation of the DNSKEY RRset of a zone are Secure records with supported signature and digest algorithms and any such local trunst anchors.
+To establish the DNSSEC status of a given zone, a validating resolver (absent a
+local trust anchor) MUST validate the DS record set as a whole, by verifying
+the RRSIG signature provided by the parent for the DS record set or its proof of
+non-existence.
+When that validation fails and no local trust anchor is available, the DS record
+set is bad, and SERVFAIL MUST be returned. [TODO source]
 
-If no DS records are supported (including the case when there are no DS records), the zone MUST be treated as Insecure (Section 5.2 of [@!RFC4035]; Section 5.2 of [@!RFC6840]).
-If DS records are supported, the zone SHOULD NOT be treated as Insecure (Section 5 of [@!RFC4035]). The zone's candidate signing keys are those from the DNSKEY RRset that match(*) any supported DS record and have protocol 3 and have the "Zone Key" flag bit set.
-Note that the "Secure Entry Point" bit is informational only and MUST be ignored by validators (Section 2.1.1 of [@!RFC4043]).
+If the DS record set is valid, the resolver evaluates for each DS record whether
+the algorithm of the associated key (as indicated by the DS record's algorithm
+field) and the hash digest algorithm (as indicated by the digest type field) are
+supported.
+If either (or both) are not supported, the DS record is dropped from further
+consideration.
+DS records that have a supported algorithm combination can be used for further
+validation ("supported DS records").
 
-If validation of the DNSKEY RRset fails, queries to the entire zone (and DNS subtree) MUST be answered with SERVFAIL (Section 5.5 of [@!RFC4035]).
-If validation succeeds, all supported keys in the DNSKEY RRset with protocol 3 and "Zone Key" flag bit set may be used to validate records of the zone.
+When the delegation does not contain any supported DS records (and a local trust
+anchor is not available), the child zone MUST be treated as "Insecure" (see
+[@!RFC4035] Section 5.2 and [@!RFC6840] Section 5.2).
 
-[[ (*) Define/refer to definition of "matches"? ]]
+Otherwise, the resolver MUST check that the child zone's apex DNSKEY record set
+has at least one valid signature made with a key matching a supported DS record
+(or any local trust anchor).
+If no such DNSKEY is found, the entire child zone is "Bogus" for lack of a
+"Secure Entry Point" (SEP).
+The zone SHOULD NOT be treated as "Insecure" ([@!RFC4035] Section 5). [TODO]
 
-For validation of the DNSKEY and any other RRset, one validation path against the keys outlined above is sufficient to validate.
-In more detail, validators SHOULD accept any single valid path.
-They SHOULD NOT insist that all algorithms signaled in the DS RRset work, and they MUST NOT insist that all algorithms signaled in the DNSKEY RRset work. (Section 5.11 of [@!RFC6840])
+The zone's candidate signing keys are those zone apex DNSKEYs with the protocol
+field set to 3 ([@!RFC4034] Section 2.1.2) and the "Zone Key" flag bit set
+([@!RFC4034] Section 2.1.1).
+Keys that do not fulfill these conditions are not signing keys and cannot be
+used for validation.
+(Note that the "Secure Entry Point" bit is informational only and not examined
+during validation, see [@!RFC4043] Section 2.1.1.)
+
+If validation of the DNSKEY RRset fails, queries to the entire child zone (and
+DNS subtree) MUST be answered with SERVFAIL (Section 5.5 of [@!RFC4035]).
+Contrariwise, when the validation of the DNSKEY RRset succeeded, all signing
+keys with an algorithm supported by the validating resolver may be used to
+validate records of the zone.
+
+It is perfectly fine for the set of supported DS records to pertain to keys of
+different signing algorithms.
+This situation is commonly encountered during algorithm rollover ([@!RFC6781]
+Section 4.1.4).
+
+For validation of the DNSKEY and any other RRset, one valid path along supported
+DS record and eligible DNSKEY as outlined above is sufficient.
+Validators SHOULD accept any single valid path.
+They SHOULD NOT insist that all algorithms signaled in the DS record set work,
+and they MUST NOT insist that all algorithms signaled in the DNSKEY record set
+work ([@!RFC6840] Section 5.11).
 
 
 ## Signer Requirements
 
-The zone signer MUST ensure that each record in the zone has a signature made with each algorithm associated with some candidate zone signing key (Section 5.11 of [@!RFC6840]).
-It is possible to add algorithms at the DNSKEY that aren't in the DS record, but not vice versa. 
+The zone signer MUST ensure that each record in the zone has a signature made
+with each algorithm associated with some candidate zone signing key (Section
+5.11 of [@!RFC6840]).
+
+It is possible to add algorithms at the DNSKEY that aren't in the DS record, but
+not vice versa.
 
 
 
