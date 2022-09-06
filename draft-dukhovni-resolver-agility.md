@@ -215,6 +215,8 @@ not vice versa.
 
 # Discussion
 
+[[ This lacks accuracy / needs some more work ]]
+
 The requirement for the signer to use all available algorithms and the requirement for the validator to accept any supported validation path enable secure algorithm rollovers. This implies that validation of a zone can happen whenever there is an intersection of the algorithm support of signer and validator.
 
 If, in violation of the standard, a zone is not signed with all the required algorithms, it may fail validation at resolvers that only support the missing algorithms.
@@ -222,6 +224,30 @@ If, in violation of the standard, a zone is not signed with all the required alg
 If, in violation of the standard, a validator insists on validating signatures for all algorithms, it may fail validation for zones that use unsupported algorithms.
 
 If the standard was changed such that the signer is only required to sign with a single algorithm of its choice, then validators that do not support one of the algorithms used in the zone may not be able to validate the zone's RRsets. This would result in either unavailability or degrated security of the zone.
+
+
+[[TODO
+Random thoughts on unexpected algorithms appearing in RRSIGs. Need to reword.
+
+> It is possible to add algorithms at the DNSKEY that aren't in the DS record, but not vice versa.
+
+However, when "in DNSSEC mode" (i.e. there was a supported DS record, and the
+DNSKEY RRset was valid), then the DNSKEY record set always contains the algorithm
+of the supported DS record, and the signer MUST always have that algorithm present
+for all other RRsets.
+So, while the resolver SHOULD NOT enforce that all algorithms are always present:
+When something seems weird and RRSIGs seem missing or have other (perhaps
+unsupported) algorithms that were not present in the DS RRset, the resolver can
+always take recourse with the argument that a zone or signer that does NOT
+provide an RRSIG with the supported DS record's algorithm in such a case is in
+violation of the RFC.
+The situation is bogus because "the resolver believes there ought to be a chain
+of trust".
+This is a MUST, and not a contradiction to the fact that the resolver SHOULD NOT
+enforce RRSIG presence for all algorithms.
+In other words, even adding algorithms at the DNSKEY level is not "harmful", and
+does not change the resolver's chain of trust expectations.
+]]
 
 
 # Security Considerations
