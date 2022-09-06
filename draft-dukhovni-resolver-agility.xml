@@ -10,7 +10,7 @@
 </postal><email>peter.thomassen@securesystems.de</email>
 </address></author><author initials="N." surname="Wisiol" fullname="Nils Wisiol"><organization>deSEC, Technische Universität Berlin</organization><address><postal><street></street>
 </postal><email>nils@desec.io</email>
-</address></author><date year="2022" month="August" day="29"></date>
+</address></author><date year="2022" month="September" day="6"></date>
 <area>Internet</area>
 <workgroup>DNSOP Working Group</workgroup>
 
@@ -20,10 +20,12 @@ algorithms.
 When the DS record set for a zone securely indicates that the zone is
 signed using at least one algorithm supported by the validator, the validator
 MUST NOT treat this zone as &quot;Insecure&quot; (see Section 4.3 of <xref target="RFC4035"></xref>).
+Not following this strategy would effectively condone unvalidated answers
+against better knowledge, rendering DNSSEC ineffective.
 <xref target="RFC4035"></xref> and related documents arguably lack clarity on this palpable
 requirement.
 This document attempts to fill the gap by giving guidance on how to avoid such
-downgrade attacks in resolver implementations <xref target="RFC4035"></xref>.</t>
+downgrade attacks in resolver implementations.</t>
 <t>[ Ed note: This document is being collaborated on at
 <eref target="https://github.com/desec-io/draft-dukhovni-resolver-agility/">https://github.com/desec-io/draft-dukhovni-resolver-agility/</eref>.
 The authors gratefully accept pull requests. ]</t>
@@ -39,15 +41,15 @@ The authors gratefully accept pull requests. ]</t>
 some mainstream and mandatory to implement, and others recommended to implement,
 but not yet widely deployed.
 Validating resolvers generally support a range of algorithms beyond the
-mandatory to implement set: Some that are deprecated, but still in use by a
-non-trivial number of deployed zones, others that are expected to be in wider
+mandatory-to-implement set: Some that are deprecated, but still deployed by a
+non-negligible number of live zones, and others that are expected to be in wider
 use in the future.
 The status of the various algorithms is noted in Section 3 of <xref target="RFC8624"></xref>, which
 is expected be updated in subsequent documents from time to time.</t>
 <t>Some zones may be signed with multiple algorithms.  Such multi-algorithm zones
 are typically in a transitional state from one algorithm to another, with at
-least the new algorithm expected to be widely deployed, allowing the older
-algorithm to be dropped at the end of the transition period.
+least the new algorithm expected to be (or become) widely deployed, allowing the
+older algorithm to be dropped at the end of the transition period.
 (For the rollover procedure, see <xref target="RFC6781"></xref> Section 4.1.4.)</t>
 <t>Algorithms that a zone is signed with are signaled via the delegation's DS
 record set which is signed and published by the parent.
@@ -59,16 +61,17 @@ signatures made via any of the supported algorithms (see Section 5.4 of
 <xref target="RFC6840"></xref>).
 This mechanism is not expected to ensure that the strongest of multiple shared
 algorithms is the only one used for validation; the sole requirement is
-resistance to downgrades of zones signed via a supported algorithm to
-&quot;Insecure&quot;.</t>
+resistance to downgrades to &quot;Insecure&quot; for zones signed via a supported
+algorithm.</t>
 <t>A given validating resolver may not support one or more of the algorithms a zone
 is signed with.
 When none are supported, absent local policy requiring the zone to be signed,
 the resolver MUST consider the zone &quot;Insecure&quot; (see Section 4.3 of <xref target="RFC4035"></xref>).
-When, as explained in <xref target="requirements"></xref> below, the zone's signature algorithms
+But whenever the zone's signature algorithms
 overlap with those supported by the resolver, the zone MUST NOT be treated as
-&quot;Insecure&quot; (even when no RRSIGs for supported algorithms are included in a given
-reply).</t>
+&quot;Insecure&quot;; this holds even when no RRSIGs for supported algorithms are included
+in a given reply.
+<xref target="requirements"></xref> below explains these requirements in greater detail.</t>
 
 <section anchor="requirements-notation"><name>Requirements Notation</name>
 <t>The key words &quot;<bcp14>MUST</bcp14>&quot;, &quot;<bcp14>MUST NOT</bcp14>&quot;, &quot;<bcp14>REQUIRED</bcp14>&quot;,
@@ -81,33 +84,110 @@ capitals, as shown here.</t>
 </section>
 
 <section anchor="requirements"><name>Requirements on Signature Algorithms Present in DNSSEC Zones and Answers</name>
+<t>To include a child domain in the parent's DNSSEC chain of trust, the parent
+provides a cryptographic link to the child.
+The parent does this by computing cryptographic hashes of the DNSSEC keys that
+the child wishes to be included in the delegation.
+As various hash digest algorithms are available, the chosen algorithm is
+recorded alongside each fingerprint.
+This information, together with the key's signing algorithm (and some derived
+&quot;keytag&quot; metadata), is included in the parent zone in the form of &quot;Delegation
+Signer&quot; (DS) records, alongside the delegation's NS (and glue) records.</t>
+<t>Due to the degree of freedom in choosing the hash algorithm, the parent may
+publish several DS records for each key (one per hash algorithm).
+Typically, one or two DS records are published for a given key (<xref target="RFC8624"></xref>
+Section 3.3).</t>
+<t>A domain's delegation thus has at least one DS record for each child DNSSEC key
+that the child has designated to be included in the delegation.
+The DS record's hash digest algorithm and the associated key's signing algorithm
+can easily be seen by inspection of the DS record data.</t>
+<t>Note that the hash digest algorithm used for DS record preparation is not to be
+confused with the signing algorithm of the DNSSEC key associated with that DS
+record.</t>
 
 <section anchor="validation-requirements"><name>Validation Requirements</name>
-<t>The DS RRset of a zone may contain information on keys of several different algorithms;
-this is regularly the case in the context of algorithm rollover (Section 4.1.4 <xref target="RFC6781"></xref>).
-The DS records relevant for validation of the DNSKEY RRset of a zone are Secure records with supported signature and digest algorithms and any such local trunst anchors.</t>
-<t>If no DS records are supported (including the case when there are no DS records), the zone MUST be treated as Insecure (Section 5.2 of <xref target="RFC4035"></xref>; Section 5.2 of <xref target="RFC6840"></xref>).
-If DS records are supported, the zone SHOULD NOT be treated as Insecure (Section 5 of <xref target="RFC4035"></xref>). The zone's candidate signing keys are those from the DNSKEY RRset that match(*) any supported DS record and have protocol 3 and have the &quot;Zone Key&quot; flag bit set.
-Note that the &quot;Secure Entry Point&quot; bit is informational only and MUST be ignored by validators (Section 2.1.1 of <xref target="RFC4043"></xref>).</t>
-<t>If validation of the DNSKEY RRset fails, queries to the entire zone (and DNS subtree) MUST be answered with SERVFAIL (Section 5.5 of <xref target="RFC4035"></xref>).
-If validation succeeds, all supported keys in the DNSKEY RRset with protocol 3 and &quot;Zone Key&quot; flag bit set may be used to validate records of the zone.</t>
-<t>[[ (*) Define/refer to definition of &quot;matches&quot;? ]]</t>
-<t>For validation of the DNSKEY and any other RRset, one validation path against the keys outlined above is sufficient to validate.
-In more detail, validators SHOULD accept any single valid path.
-They SHOULD NOT insist that all algorithms signaled in the DS RRset work, and they MUST NOT insist that all algorithms signaled in the DNSKEY RRset work. (Section 5.11 of <xref target="RFC6840"></xref>)</t>
+<t>To establish the DNSSEC status of a given zone, a validating resolver (absent a
+local trust anchor) MUST validate the DS record set as a whole, by verifying
+the RRSIG signature provided by the parent for the DS record set or its proof of
+non-existence.
+When that validation fails and no local trust anchor is available, the DS record
+set is bad, and SERVFAIL MUST be returned. [TODO source]</t>
+<t>If the DS record set is valid, the resolver evaluates for each DS record whether
+the algorithm of the associated key (as indicated by the DS record's algorithm
+field) and the hash digest algorithm (as indicated by the digest type field) are
+supported.
+If either (or both) are not supported, the DS record is dropped from further
+consideration.
+DS records that have a supported algorithm combination can be used for further
+validation (&quot;supported DS records&quot;).</t>
+<t>When the delegation does not contain any supported DS records (and a local trust
+anchor is not available), the child zone MUST be treated as &quot;Insecure&quot; (see
+<xref target="RFC4035"></xref> Section 5.2 and <xref target="RFC6840"></xref> Section 5.2).</t>
+<t>Otherwise, the resolver MUST check that the child zone's apex DNSKEY record set
+has at least one valid signature made with a key matching a supported DS record
+(or any local trust anchor).
+If no such DNSKEY is found, the entire child zone is &quot;Bogus&quot; for lack of a
+&quot;Secure Entry Point&quot; (SEP).
+The zone SHOULD NOT be treated as &quot;Insecure&quot; (<xref target="RFC4035"></xref> Section 5). [TODO]</t>
+<t>The zone's candidate signing keys are those zone apex DNSKEYs with the protocol
+field set to 3 (<xref target="RFC4034"></xref> Section 2.1.2) and the &quot;Zone Key&quot; flag bit set
+(<xref target="RFC4034"></xref> Section 2.1.1).
+Keys that do not fulfill these conditions are not signing keys and cannot be
+used for validation.
+(Note that the &quot;Secure Entry Point&quot; bit is informational only and not examined
+during validation, see <xref target="RFC4043"></xref> Section 2.1.1.)</t>
+<t>If validation of the DNSKEY RRset fails, queries to the entire child zone (and
+DNS subtree) MUST be answered with SERVFAIL (Section 5.5 of <xref target="RFC4035"></xref>).
+Contrariwise, when the validation of the DNSKEY RRset succeeded, all signing
+keys with an algorithm supported by the validating resolver may be used to
+validate records of the zone.</t>
+<t>It is perfectly fine for the set of supported DS records to pertain to keys of
+different signing algorithms.
+This situation is commonly encountered during algorithm rollover (<xref target="RFC6781"></xref>
+Section 4.1.4).</t>
+<t>For validation of the DNSKEY and any other RRset, one valid path along supported
+DS record and eligible DNSKEY as outlined above is sufficient.
+Validators SHOULD accept any single valid path.
+They SHOULD NOT insist that all algorithms signaled in the DS record set work,
+and they MUST NOT insist that all algorithms signaled in the DNSKEY record set
+work (<xref target="RFC6840"></xref> Section 5.11).</t>
 </section>
 
 <section anchor="signer-requirements"><name>Signer Requirements</name>
-<t>The zone signer MUST ensure that each record in the zone has a signature made with each algorithm associated with some candidate zone signing key (Section 5.11 of <xref target="RFC6840"></xref>).
-It is possible to add algorithms at the DNSKEY that aren't in the DS record, but not vice versa.</t>
+<t>The zone signer MUST ensure that each record in the zone has a signature made
+with each algorithm associated with some candidate zone signing key (Section
+5.11 of <xref target="RFC6840"></xref>).</t>
+<t>It is possible to add algorithms at the DNSKEY that aren't in the DS record, but
+not vice versa.</t>
 </section>
 </section>
 
 <section anchor="discussion"><name>Discussion</name>
+<t>[[ This lacks accuracy / needs some more work ]]</t>
 <t>The requirement for the signer to use all available algorithms and the requirement for the validator to accept any supported validation path enable secure algorithm rollovers. This implies that validation of a zone can happen whenever there is an intersection of the algorithm support of signer and validator.</t>
 <t>If, in violation of the standard, a zone is not signed with all the required algorithms, it may fail validation at resolvers that only support the missing algorithms.</t>
 <t>If, in violation of the standard, a validator insists on validating signatures for all algorithms, it may fail validation for zones that use unsupported algorithms.</t>
 <t>If the standard was changed such that the signer is only required to sign with a single algorithm of its choice, then validators that do not support one of the algorithms used in the zone may not be able to validate the zone's RRsets. This would result in either unavailability or degrated security of the zone.</t>
+<t>[[TODO
+Random thoughts on unexpected algorithms appearing in RRSIGs. Need to reword.</t>
+<blockquote><t>It is possible to add algorithms at the DNSKEY that aren't in the DS record, but not vice versa.</t>
+</blockquote><t>However, when &quot;in DNSSEC mode&quot; (i.e. there was a supported DS record, and the
+DNSKEY RRset was valid), then the DNSKEY record set always contains the algorithm
+of the supported DS record, and the signer MUST always have that algorithm present
+for all other RRsets.
+So, while the resolver SHOULD NOT enforce that all algorithms are always present:
+When something seems weird and RRSIGs seem missing or have other (perhaps
+unsupported) algorithms that were not present in the DS RRset, the resolver can
+always take recourse with the argument that a zone or signer that does NOT
+provide an RRSIG with the supported DS record's algorithm in such a case is in
+violation of the RFC.
+The situation is bogus because &quot;the resolver believes there ought to be a chain
+of trust&quot;.
+This is a MUST, and not a contradiction to the fact that the resolver SHOULD NOT
+enforce RRSIG presence for all algorithms.
+In other words, even adding algorithms at the DNSKEY level is not &quot;harmful&quot;, and
+does not change the resolver's chain of trust expectations.
+]]</t>
 </section>
 
 <section anchor="security-considerations"><name>Security Considerations</name>
