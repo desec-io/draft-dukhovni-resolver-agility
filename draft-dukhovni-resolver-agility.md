@@ -71,16 +71,16 @@ DNSSEC (with core specifications [@!RFC4033], [@!RFC4034], [@!RFC4035],
 some mainstream and mandatory to implement, and others recommended to implement,
 but not yet widely deployed.
 Validating resolvers generally support a range of algorithms beyond the
-mandatory to implement set: Some that are deprecated, but still in use by a
-non-trivial number of deployed zones, others that are expected to be in wider
+mandatory-to-implement set: Some that are deprecated, but still deployed by a
+non-negligible number of live zones, and others that are expected to be in wider
 use in the future.
 The status of the various algorithms is noted in Section 3 of [@!RFC8624], which
 is expected be updated in subsequent documents from time to time.
 
 Some zones may be signed with multiple algorithms.  Such multi-algorithm zones
 are typically in a transitional state from one algorithm to another, with at
-least the new algorithm expected to be widely deployed, allowing the older
-algorithm to be dropped at the end of the transition period.
+least the new algorithm expected to be (or become) widely deployed, allowing the
+older algorithm to be dropped at the end of the transition period.
 (For the rollover procedure, see [@!RFC6781] Section 4.1.4.)
 
 Algorithms that a zone is signed with are signaled via the delegation's DS
@@ -94,17 +94,18 @@ signatures made via any of the supported algorithms (see Section 5.4 of
 [@!RFC6840]).
 This mechanism is not expected to ensure that the strongest of multiple shared
 algorithms is the only one used for validation; the sole requirement is
-resistance to downgrades of zones signed via a supported algorithm to
-"Insecure".
+resistance to downgrades to "Insecure" for zones signed via a supported
+algorithm.
 
 A given validating resolver may not support one or more of the algorithms a zone
 is signed with.
 When none are supported, absent local policy requiring the zone to be signed,
 the resolver MUST consider the zone "Insecure" (see Section 4.3 of [@!RFC4035]).
-When, as explained in (#requirements) below, the zone's signature algorithms
+But whenever the zone's signature algorithms
 overlap with those supported by the resolver, the zone MUST NOT be treated as
-"Insecure" (even when no RRSIGs for supported algorithms are included in a given
-reply).
+"Insecure"; this holds even when no RRSIGs for supported algorithms are included
+in a given reply.
+(#requirements) below explains these requirements in greater detail.
 
 
 ## Requirements Notation
