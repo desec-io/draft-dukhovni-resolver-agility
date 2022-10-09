@@ -48,15 +48,13 @@ organization = "deSEC, Technische Universität Berlin"
 
 DNSSEC [@!RFC4035] allows a zone to be signed with multiple signature
 algorithms.
-When the DS record set for a zone securely indicates that the zone is
-signed using at least one algorithm supported by the validator, the validator
-MUST NOT treat this zone as "Insecure" (see Section 4.3 of [@!RFC4035]).
-Not following this strategy would effectively condone unvalidated answers
-against better knowledge, rendering DNSSEC ineffective.
-[@!RFC4035] and related documents arguably lack clarity on this palpable
-requirement.
-This document attempts to fill the gap by giving guidance on how to avoid such
-downgrade attacks in resolver implementations.
+[@!RFC4035] specified only signer requirements for zones signed with multiple
+algorithms, this document clarifies the corresponding requirements for
+validating resolvers.
+When the DS record set for a zone securely indicates that the zone is signed
+using at least one algorithm supported by a validating resolver, the resolver
+MUST avoid downgrade attacks by ensuring that authoritative RRsets from such a
+zone are accompanied by at least one supported valid signature.
 
 [ Ed note: This document is being collaborated on at
 <https://github.com/desec-io/draft-dukhovni-resolver-agility/>.
