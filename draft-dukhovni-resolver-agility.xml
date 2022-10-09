@@ -10,22 +10,20 @@
 </postal><email>peter.thomassen@securesystems.de</email>
 </address></author><author initials="N." surname="Wisiol" fullname="Nils Wisiol"><organization>deSEC, Technische Universität Berlin</organization><address><postal><street></street>
 </postal><email>nils@desec.io</email>
-</address></author><date year="2022" month="September" day="6"></date>
+</address></author><date year="2022" month="October" day="9"></date>
 <area>Internet</area>
 <workgroup>DNSOP Working Group</workgroup>
 
 <abstract>
 <t>DNSSEC <xref target="RFC4035"></xref> allows a zone to be signed with multiple signature
 algorithms.
-When the DS record set for a zone securely indicates that the zone is
-signed using at least one algorithm supported by the validator, the validator
-MUST NOT treat this zone as &quot;Insecure&quot; (see Section 4.3 of <xref target="RFC4035"></xref>).
-Not following this strategy would effectively condone unvalidated answers
-against better knowledge, rendering DNSSEC ineffective.
-<xref target="RFC4035"></xref> and related documents arguably lack clarity on this palpable
-requirement.
-This document attempts to fill the gap by giving guidance on how to avoid such
-downgrade attacks in resolver implementations.</t>
+<xref target="RFC4035"></xref> specified only signer requirements for zones signed with multiple
+algorithms, this document clarifies the corresponding requirements for
+validating resolvers.
+When the DS record set for a zone securely indicates that the zone is signed
+using at least one algorithm supported by a validating resolver, the resolver
+MUST avoid downgrade attacks by ensuring that authoritative RRsets from such a
+zone are accompanied by at least one supported valid signature.</t>
 <t>[ Ed note: This document is being collaborated on at
 <eref target="https://github.com/desec-io/draft-dukhovni-resolver-agility/">https://github.com/desec-io/draft-dukhovni-resolver-agility/</eref>.
 The authors gratefully accept pull requests. ]</t>
