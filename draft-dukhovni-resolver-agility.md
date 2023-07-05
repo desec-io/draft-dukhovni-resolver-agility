@@ -104,8 +104,8 @@ When none are supported, absent local policy requiring the zone to be signed,
 the resolver MUST consider the zone "Insecure" (see Section 4.3 of [@!RFC4035]).
 But whenever the zone's signature algorithms
 overlap with those supported by the resolver, the zone MUST NOT be treated as
-"Insecure"; this holds even when no DNSKEYs or RRSIGs for supported algorithms are included
-in a given reply.
+"Insecure"; this holds even when no DNSKEYs or RRSIGs for supported algorithms
+are included in a given reply.
 (#requirements) below explains these requirements in greater detail.
 
 
@@ -139,7 +139,8 @@ Typically, one or two DS records are published for a given key ([@!RFC8624]
 Section 3.3).
 
 Note that the hash algorithm used for DS record preparation is not to be
-confused with any hash algorithm used as part of the signing algorithm of the
+confused with the signing algorithm of the DNSSEC key associated with that DS
+record, or any hash algorithm used as part of the signing algorithm of the
 DNSSEC key associated with that DS record.  For example, a DS record that
 hashes the key with SHA2-256 may correspond to an RSASHA512(10) key, which
 creates signatures via RSA with SHA2-512.
@@ -147,15 +148,18 @@ creates signatures via RSA with SHA2-512.
 {#signer}
 ## Signer Requirements
 
-The zone's candidate signing keys are those zone apex DNSKEYs with the protocol field set to 3 ([@!RFC4034] Section 2.1.2) and the "Zone Key" flag bit set ([@!RFC4034] Section 2.1.1).
-Keys that do not fulfill these conditions are not signing keys and cannot be used for validation.
-(Note that the "Secure Entry Point" bit is informational only and not examined during validation, see [@!RFC4034] Section 2.1.1.)
+The zone's candidate signing keys are those zone apex DNSKEYs with the protocol 
+field set to 3 ([@!RFC4034] Section 2.1.2) and the "Zone Key" flag bit set 
+([@!RFC4034] Section 2.1.1).  Keys that do not fulfill these conditions are not
+signing keys and cannot be used for validation.  (Note that the "Secure Entry
+Point" bit is informational only and not examined during validation, see
+[@!RFC4034] Section 2.1.1.)
 
 [@!RFC4035] Section 2.2 and [@!RFC6840] Section 5.11 mandate that for each
 DNSSEC algorithm listed in the parent DS RRset there be at least one DNSKEY of
 the same algorithm in the child apex DNSKEY RRSet.  Implicit, but unstated, is
 the requirement that such a key MUST actually match a corresponding DS record,
-and must be a signer of the DNSKEY RRSet.  In other words, for each algorithm
+and must sign the DNSKEY RRSet.  In other words, for each algorithm
 in the parent DS RRSet there must be a child DNSKEY that is a "secure entry
 point" into the child zone (such a key will typically, but need not, have the
 SEP bit set).  This makes it possible for a resolver that supports that
@@ -171,10 +175,6 @@ the zone.  Note however, that for some time (DS TTL + secondary server
 replication delay) after an algorithm is dropped from the parent DS RRset, some
 resolvers may still have cached copies that list that algorithm, so the
 associated RRSIGs need to be retained until all such copies expire.
-
-Operational experience has also shown that a more fine-grained approach taking
-into account the destinction of MTI and non-MTI algorithms is desirable.  The
-above requirements are therefore updated as follows.
 
 {#dnskey}
 ### Inclusion of DNSKEY Records
@@ -194,7 +194,7 @@ The zone signer MUST ensure that
 
 Note that this relaxes the previous requirement to have a signature from every
 algorithm listed in the DNSKEY RRset.  Algorithms that appear only the DNSKEY
-RRset, but in the parent DS (or as part of a trust anchor set) don't have to
+RRset, but not in the parent DS (or as part of a trust anchor set) don't have to
 be used to sign any zone data.
 
 {#validator}
@@ -213,21 +213,26 @@ that zone is "Secure" or "Insecure".
       perform DNSSEC validation of authoritative RRsets, but does need to
       locate and return the requisite RRSIG, NSEC or NSEC3 records in its
       response when the request had the DO bit set.
+      [ TODO: What about the AD bit in this case? Can it be set if DNSSEC
+      records returned upon DO request may conflict (as validation is skipped? ]
 
     - Otherwise, if the zone has (by local policy) a negative trust anchor,
-      or is the root zone, and no trust anchor for the root is configured,
+      or if the zone is the root zone but has no trust anchor configured,
       then the zone is "Insecure".
 
     - Otherwise, if the RRset is from a zone with an associated trust anchor
       set and at least one DNSKEY algorithm in the trust anchor set is
       supported, the zone is "Secure".  Its DNSKEY RRSet MUST be signed with
       at least one of the trust anchor keys.
+      [ TODO: The last sentence sounds like a signer requirement. ]
+      [ TODO: Does this MUST also hold when the parent is Secure and has DS? ]
 
     - Otherwise, if the RRset is from a zone delegated from a "Secure" parent,
       its security status is determined from the signed presence of the
       associated DS RRset or its signed denial of existence by that parent.
       Explicit probing for the DS RRSet may be needed in some cases, notably
       when the same nameserver handles both the parent and child zone.
+      [ TODO: When is that not required? ]
 
         * If a valid DS RRset is obtained, and at least one record designates a
           supported DNSKEY algorithm with a supported hash type, then the
@@ -240,7 +245,7 @@ that zone is "Secure" or "Insecure".
         * If a valid denial of existence is obtained, then the associated zone
           is "Insecure".
 
-        * If no validated DS RRset or its denial of existence is obtained,
+        * If neither the DS RRset or its denial of existence can be validated,
           the delegation is "Bogus" and a SERVFAIL must be returned to the
           client.
 
@@ -260,8 +265,8 @@ answered with SERVFAIL (Section 5.5 of [@!RFC4035]).  The zone MUST NOT be
 treated as "Insecure".
 
 Contrariwise, when the validation of the DNSKEY RRset succeeded, all the
-contained supported keys with the "ZONE" bit set and the "REVOKE" bit unset are
-valid signers of zone data.  Any such key (there's at least one) may be used to
+contained supported keys with the "ZONE" bit set that are not revoked are valid
+signing keys of zone data.  Any such key (there's at least one) may be used to
 validate RRsets of the zone, including keys not directly referenced by or
 whose algorithm does not appear in the DS RRset (or trust anchor set).
 
@@ -287,6 +292,8 @@ algorithm rollover ([@?RFC6781] Section 4.1.4).
 For validation of the DNSKEY and any other RRset, one valid path along
 supported DS record and eligible DNSKEY as outlined above is sufficient.
 Validators MUST accept any single valid path.  They MUST NOT insist that all
+[ TODO: This updates previous spec and should be pointed out in abstract. Also,
+  we should give a rationale for the change. ]
 algorithms signaled in the DS record set work, and they MUST NOT insist that
 all algorithms signaled in the DNSKEY record set work ([@!RFC6840] Section
 5.11).
